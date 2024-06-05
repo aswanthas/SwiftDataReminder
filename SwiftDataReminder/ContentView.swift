@@ -11,12 +11,16 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) var context
     @State private var isShowItemSheet: Bool = false
+    @State private var editReminder: DataModel?
     @Query var data: [DataModel]
     var body: some View {
         NavigationStack {
             List {
                 ForEach(data) { reminder in
                     ReminderCell(data: reminder)
+                        .onTapGesture(perform: {
+                            editReminder = reminder
+                        })
                 }
                 .onDelete(perform: { indexSet in
                     for index in indexSet {
@@ -28,6 +32,9 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $isShowItemSheet, content: {
                 AddReminderSheet()
+            })
+            .sheet(item: $editReminder, content: { reminder in
+                UpdateReminderSheet(reminder: reminder)
             })
             .toolbar {
                 if !data.isEmpty {
@@ -58,7 +65,7 @@ struct ContentView: View {
     ContentView()
 }
 
-
+//MARK:  Add reminder
 struct AddReminderSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) var context
@@ -88,7 +95,29 @@ struct AddReminderSheet: View {
                             // Handle the error appropriately in your app
                             print("Failed to save reminder: \(error.localizedDescription)")
                         }
-                        
+                        dismiss()
+                    }
+                }
+            })
+        }
+    }
+}
+
+// MARK: Update reminder
+
+struct UpdateReminderSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var reminder: DataModel
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Reminder Name", text: $reminder.name)
+            }
+            .navigationTitle("Update reminder")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar(content: {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button("Done") {
                         dismiss()
                     }
                 }
